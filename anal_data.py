@@ -1,22 +1,16 @@
 from os import times
-
 import requests
 import json
 import datetime
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.sparse.csgraph import depth_first_tree
-from scipy.special import result
-from sympy.physics.units import microseconds
-from win32ctypes.pywin32.pywintypes import datetime
 
 
 def get_url():
     nameurl = "https://api.bithumb.com/v1/market/all?isDetails=false"
     headers = {"accept": "application/json"}
     response = requests.get(nameurl, headers=headers)
-    print(type(response.text)) #<class 'str'>
-
+    #print(type(response.text)) #<class 'str'>
     res_dict = json.loads(response.text) #json.dumps
     # print(res_dict[0].keys()) #[마켓, 한국이름, 영어이름]
     # print(res_dict[0]["market"]) #KRW-BTC -> KRW마켓
@@ -26,17 +20,16 @@ def get_url():
     # print(res_dict[5]["korean_name"]) #퀀텀
     # print(res_dict[5]["english_name"]) #Qtum
     # print()
-
     encrypto_names = []
     for data in res_dict:
         if not "KRW-" in data["market"]:
-            print(data["market"]) #BTC-ETH -> BTC마켓
-        encrypto_names.append({"symbol":data["market"].split("-")[1],"eng":data["english_name"],"kor":data["korean_name"]})
+            #print(data["market"]) #BTC-ETH -> BTC마켓
+            encrypto_names.append({"symbol":data["market"].split("-")[1],"eng":data["english_name"],"kor":data["korean_name"]})
     return encrypto_names
 
 # 1. 데이터유형 - [{sumbol:BTC,kor:한국이름,eng}]
 # print(encrypto_names)
-def GetCandleDAta(currency="BTC", times="24h", pyament="KRW"):
+def GetCandleData(currency="BTC", times="24h", pyament="KRW"):
     order_currency = "BTC" # order_currency: 화폐명
     payment_currency = "KRW" # payment_currency: 지불화폐
     chart_intervals = "24h" # chart_intervals: 데이터간격(시간)
