@@ -29,10 +29,10 @@ def get_url():
 
 # 1. 데이터유형 - [{sumbol:BTC,kor:한국이름,eng}]
 # print(encrypto_names)
-def GetCandleData(currency="BTC", times="24h", pyament="KRW"):
+def GetCandleData(currency="BTC", times="24h", payment="KRW"):
     order_currency = "BTC" # order_currency: 화폐명
     payment_currency = "KRW" # payment_currency: 지불화폐
-    chart_intervals = "24h" # chart_intervals: 데이터간격(시간)
+    chart_intervals = "12h" # chart_intervals: 데이터간격(시간)
     candle_url = f"https://api.bithumb.com/public/candlestick/{order_currency}_{payment_currency}/{chart_intervals}"
     # print(candle_url)
     headers = {"accept": "application/json"}
@@ -57,7 +57,7 @@ def GenerateData(sorce_data,timeslot):
             slot_data.append(sorce_data[cur_ix])
         x_data.append(slot_data)
         y_data.append(sorce_data[timeslot+ix])
-    return np.array(x_data),np.array(y_data)
+    return np.array(x_data).astype("float"),np.array(y_data).astype("float")
 
 #문제 데이터와 정답데이터 일치성 확인
 def confirm_data(x_data,y_data,sorce_data):
@@ -66,16 +66,17 @@ def confirm_data(x_data,y_data,sorce_data):
         result_bool = False
     if y_data[1] != x_data[2][-1]:
         result_bool = False
-    if y_data[-1] != sorce_data[-1]: #마지막 데이터 확인
+    if y_data[-1] != sorce_data[-1].astype("float"): #마지막 데이터 확인
         result_bool = False
-    if y_data[-2] != sorce_data[-2]:
+    if y_data[-2] != sorce_data[-2].astype("float"):
         result_bool = False
     return result_bool
 
 #산점도 분석
-def ScatterAnal(x_data,y_data):
-    cvdata = np.average(x_data,axis=1,weights=(0.02,0.04,0.04,0.08,0.08,0.1,0.13,0.15,0.16,0.2))
-    plt.scatter(x_data,y_data)
+def ScatterAnal(x_data,y_data,weights,title):
+    cvdata = np.average(x_data,axis=1,weights=weights)
+    plt.scatter(cvdata,y_data)
+    plt.title(title)
     plt.show()
 
 #print(type(candle_data["data"][:][1])) #<class 'list'>
