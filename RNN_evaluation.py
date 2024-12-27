@@ -1,19 +1,18 @@
 import matplotlib.pyplot as plt
+import pickle
 
-def Run_grahp(fit_his):
-    plt.subplot(1,2,1)
-    plt.plot(fit_his.history["acc"],label="ACC")
-    plt.plot(fit_his.history["val_acc"],label="VAL_ACC")
-    plt.legend()
-    plt.title("ACCURACY")
-    plt.xticks([]); plt.yticks([])
-
-    plt.subplot(1,2,2)
-    plt.plot(fit_his.history["loss"],label="LOSS")
-    plt.plot(fit_his.history["val_loss"],label="VAL_LOSS")
-    plt.legend()
-    plt.title("MSE LOSS")
-    plt.xticks([]); plt.yticks([])
+def Run_grahp(userInput, timeArr):
+    plt.subplots_adjust(wspace=0.2,hspace=0.2)
+    for ix, cname in enumerate(userInput):
+        for tx,ctime in enumerate(timeArr):
+            plt.subplot(len(userInput),len(timeArr),ix+tx+1)
+            with open(r"models\{}_{}_fit_his".format(cname,ctime),"rb") as fp:
+                fit_his = pickle.load(fp)
+                plt.plot(fit_his.history["loss"],label="LOSS")
+                plt.plot(fit_his.history["val_loss"],label="VAL_LOSS")
+                plt.legend()
+                plt.title(f"{cname}_{ctime}MSE LOSS")
+                plt.xticks([]); plt.yticks([])
     plt.show()
 
 def ConvertValue(scaler,val):

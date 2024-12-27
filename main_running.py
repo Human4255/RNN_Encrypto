@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sklearn
 import pickle
+import tensorflow as tf
 from datetime import datetime
 from anal_data import get_url,GetCandleData,GenerateData,confirm_data,ScatterAnal
 from utility import cv_format,cv_mill2date,cv_date2milli,cv_str2date,GetCompare
@@ -116,44 +117,67 @@ def Train_running(coinname,korname,timesArr,payment):
         y_data = scaler.fit_transform(y_data)
         print(x_data[0][:10])
         print(y_data[:10])
-
-        #모델훈련
-        rmodel = ConstructorModel(timeslot)
+        rmodel = None
+        #LSTM모델
+        if not os.path.exists(r"models\{}_{}_rnnmodel.keras".format(coinname,times)):
+            rmodel = ConstructorModel(timeslot)
+        else:
+            rmodel = tf.keras.models.load_model(r"models\{}_{}_rnnmodel.keras".format(coinname,times))
         fit_his = rmodel.fit(x_data,y_data,validation_data=(x_data,y_data),epochs=count_epoch,batch_size=len(x_data)//10)
         rmodel.save(r"models\{}_{}_rnnmodel.keras".format(coinname,times))
+        with open(r"models\{}_{}_fit_his".format(coinname,times), "wb") as fp:
+            pickle.dump(fit_his, fp)
         #스케일러 저장
         if not os.path.exists(r"models\{}_scaler".format(coinname)):
             with open(r"models\{}_scaler".format(coinname), "wb") as fp:
                 pickle.dump(scaler, fp)
-
         #모델그리기&예측
         loss,acc = EvaluationModel(rmodel,x_data,y_data)
         print("손실도:",loss," :: 정확도:",acc)
-        today_x = np.array([x_data[-1]])
-        today_y = np.array([y_data[-1]])
+        rarr = np.random.randint(0,len(x_data)-2,9)
+        rarr = np.append(rarr, [len(x_data) - 1], axis=0)
+        test_x = []
+        test_y = []
+        for i in rarr:
+            test_x.append(x_data[i])
+            test_y.append(y_data[i])
+        test_x = np.array(test_x)
+        test_y = np.array(test_y)
+        print(test_x.shape) #(10,60,1)
+        print(test_y.shape) #(10,60,1)
 
-        Run_grahp(fit_his)
-
-        pred_y = Today_predict(rmodel, today_x)
-        today_y = ConvertValue(scaler,today_y)
+        pred_y = Today_predict(rmodel, test_x)
+        true_value = ConvertValue(scaler,test_y)
         pred_value = ConvertValue(scaler,pred_y)
-        print("실제값:",round(today_y[0][0],4)," :: 예측값:",round(pred_value[0][0],4))
-        # print("실제값과 예측값 오차율: ","{:.2f}".format(abs(pred_value[0].item() - today_y[0].item()) / today_y[0].item()), "%%")
-        print("{} ({}) {} 실제값과 예측값 오차율: ","{:.2f}"
-              .format(coinname,korname,times,abs(pred_value[0][0] - today_y[0][0]) / today_y[0][0]*100),"%")
+        for i in range(len(true_value)):
+            print(ix+1,".실제값:",round(true_value[i][0],4),"예측값:",round(pred_value[i][0],4))
+            rat = (np.abs(pred_value - true_value) / true_value).sum()/len(true_value) *100
+        print("{} ({}) {} 실제값과 예측값 오차율: {:.2f}".format(coinname,korname,times,rat,"%"))
 
+
+names = get_url()
+nameArr = [obj["symbol"] for obj in names]
+print(",".join(nameArr))
+userInput = input("분석 할 화폐목록을 콤마로 구분하여 작성해주세요. (전체선택 시 all을 입력하세요)\n")
+if userInput == "all":
+    names = names
+else:
+    userInput = userInput.split(",")
+    names=[{"symbol":obj["symbol"],"eng":obj["eng"],"kor":obj["kor"] }for obj in names if obj["symbol"] in userInput]
+# print(names)
 #변수
 timeslot = 60
-weight_avg = np.linspace(0,1,timeslot)
-count_epoch = 200
+weight_avg = np.linspace(0,1,timeslot)#평균가중치 부분
+count_epoch = input("훈련 횟수를 숫자로 지정하세요\n")
+count_epoch = int(count_epoch)
 payment = "KRW"
 if len(weight_avg) != timeslot:
     print("가중치와 타임슬롯 수량을 동일하게 하세요")
-#1.화폐이름목록 추출
-names = get_url()
+
 timeArr = ["24h", "12h", "4h", "10m", "3m"] #24시간에 한 번씩, 4시간에 한 번씩
 for coinobj in names:
     coinname = coinobj["symbol"]
     korname = coinobj["kor"]
     Train_running(coinname,korname,timeArr,payment)
     break
+Run_grahp(userInput, timeArr)

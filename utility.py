@@ -38,7 +38,7 @@ dstr = cv_format(d)
 d = cv_str2date(dstr)
 dmil = cv_date2milli(d)
 current_time = datetime.now().timestamp()
-print(GetCompare(dmil, current_time))
+# print(GetCompare(dmil, current_time))
 
 if __name__ == "__main__":
     pass
